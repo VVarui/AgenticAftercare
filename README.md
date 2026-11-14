@@ -1,4 +1,4 @@
-# AI Aftercare
+# Agentic Aftercare
 
 A prototype nurse-assistant for post-visit check-ins. A patient checks in, rule-based **triage** scores the urgency
 and raises a nurse alert when needed, and a fine-tuned **Llama-2-7B-chat (LoRA)** model turns a finished
@@ -38,8 +38,6 @@ docker compose up -d --build    # api, frontend, postgres, redis, ollama, promet
   (not generated from your conversation).
 * Symptom names must match the triage rules (`chest_pain`, `dyspnea`, ...); the dashboard offers them in a list.
 
-Real note generation on a GPU: [`docs/RUNPOD_API.md`](docs/RUNPOD_API.md).
-
 ## Tests
 
 ```bash
@@ -59,10 +57,8 @@ they have passed once in CI.
   more unsupported numbers than the base model. Fine-tuning taught structure and style.
 * A bug in v3 (the stop token was masked during training) made notes run on; v4 fixed it
   (15 of 16 test notes with stop failures down to 1 of 16).
-* A "v5" trained on notes with unsupported sentences removed was **worse** and was not adopted.
 * The adapter in this project is a retrain of v4 with the same settings.
 
-Full details, including what was not measured: [`docs/EXPERIMENTS.md`](docs/EXPERIMENTS.md).
 
 ## Known limits
 
@@ -72,6 +68,3 @@ Full details, including what was not measured: [`docs/EXPERIMENTS.md`](docs/EXPE
 * Notes can be very short and repetitive.
 * No clinician validation. Small evaluation sets.
 
-## Deploying
-
-GPU-pod testing: [`docs/RUNPOD_API.md`](docs/RUNPOD_API.md).
