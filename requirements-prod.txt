@@ -1,0 +1,14 @@
+fastapi
+uvicorn[standard]
+pydantic
+requests
+httpx
+psutil
+torch
+transformers==4.44.2
+peft==0.12.0
+accelerate==0.33.0
+sentencepiece
+protobuf
+numpy<2
+psycopg2-binary==2.9.9

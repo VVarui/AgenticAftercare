@@ -1,0 +1,6 @@
+# Test dependencies (no torch, no GPU). The unit tests run on any machine.
+pytest
+pydantic
+requests
+fastapi
+httpx

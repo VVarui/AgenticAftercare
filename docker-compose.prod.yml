@@ -1,0 +1,173 @@
+version: '3.8'
+
+services:
+  # ============================================================================
+  # LLM INFERENCE (Llama-2-7B-chat via vLLM)
+  # ============================================================================
+  llm:
+    image: vllm/vllm-openai:latest
+    container_name: ai-aftercare-llm
+    ports:
+      - "8001:8000"  # vLLM OpenAI-compatible API
+    environment:
+      - MODEL_NAME=meta-llama/Llama-2-7b-chat-hf
+      - CUDA_VISIBLE_DEVICES=0  # Use GPU 0 (change if needed)
+      - TENSOR_PARALLEL_SIZE=1
+      - GPU_MEMORY_UTILIZATION=0.9
+    volumes:
+      - llm_cache:/root/.cache/huggingface  # Cache model weights
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]  # Requires nvidia-docker
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - ai-aftercare
+
+  # ============================================================================
+  # API SERVER (FastAPI + Uvicorn)
+  # ============================================================================
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: ai-aftercare-api
+    ports:
+      - "8000:8000"
+    environment:
+      - LLM_API_URL=http://llm:8000/v1  # vLLM endpoint
+      - POSTGRES_URL=postgresql://aftercare:${POSTGRES_PASSWORD:-aftercare}@postgres:5432/aftercare
+      - REDIS_URL=redis://redis:6379/0
+      - LOG_LEVEL=info
+      - PYTHONUNBUFFERED=1
+      - NOTE_ADAPTER_PATH=/app/models/llama-2-aftercare-v4
+      - NOTE_BASE_MODEL=NousResearch/Llama-2-7b-chat-hf
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      llm:
+        condition: service_healthy
+    volumes:
+      - ./triage_scorer.py:/app/triage_scorer.py
+      - ./api.py:/app/api.py
+      - ./llm_inference.py:/app/llm_inference.py
+      - ./db.py:/app/db.py
+      - ./note_generator_aftercare.py:/app/note_generator_aftercare.py
+    networks:
+      - ai-aftercare
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ============================================================================
+  # FRONTEND (Streamlit)
+  # ============================================================================
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: ai-aftercare-frontend
+    ports:
+      - "8501:8501"
+    environment:
+      - API_URL=http://api:8000
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - api
+    volumes:
+      - ./demo.py:/app/demo.py
+    networks:
+      - ai-aftercare
+
+  # ============================================================================
+  # DATABASE (PostgreSQL for check-in history)
+  # ============================================================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: ai-aftercare-postgres
+    environment:
+      - POSTGRES_USER=aftercare
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-aftercare}
+      - POSTGRES_DB=aftercare
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init_db.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - ai-aftercare
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aftercare"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================================================
+  # CACHE (Redis for sessions and alerts)
+  # ============================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: ai-aftercare-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - ai-aftercare
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ============================================================================
+  # MONITORING (Prometheus + Grafana)
+  # ============================================================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: ai-aftercare-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+    networks:
+      - ai-aftercare
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: ai-aftercare-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - ai-aftercare
+
+volumes:
+  postgres_data:
+  redis_data:
+  llm_cache:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  ai-aftercare:
+    driver: bridge

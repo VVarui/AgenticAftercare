@@ -1,0 +1,41 @@
+# Sample doctor-patient conversations for the dashboard's 'Load a doctor-patient conversation' box.
+
+=== post_knee_surgery ===
+Doctor: How is your recovery going after the knee replacement?
+Patient: Pretty good. The pain is about a four out of ten.
+Doctor: Are you taking your pain medicine?
+Patient: Yes, I take acetaminophen twice a day. I stopped the stronger pills yesterday.
+Doctor: Any swelling, redness or drainage at the incision?
+Patient: A little swelling but no redness and no drainage.
+Doctor: Are you doing the exercises from physical therapy?
+Patient: Every morning and evening. I can bend it to about ninety degrees.
+Doctor: Good. Keep doing the exercises and call us if the swelling gets worse or you get a fever.
+Patient: Will do.
+
+=== fever_cough ===
+Doctor: Good morning. What brings you in today?
+Patient: I've had a fever for about three days and a cough that won't go away.
+Doctor: Have you measured your temperature?
+Patient: Yes, it was 101.5 this morning.
+Doctor: Any trouble breathing or chest pain?
+Patient: My chest feels a little tight when I cough, but I can breathe okay.
+Doctor: Any other symptoms?
+Patient: Body aches and I'm very tired. No nausea.
+Doctor: Any medical conditions or medications?
+Patient: I have asthma. I use an albuterol inhaler when I need it.
+Doctor: Have you taken anything for the fever?
+Patient: Just ibuprofen, which helps for a few hours.
+Doctor: Okay. Rest, drink fluids, keep taking the ibuprofen. If you get short of breath or aren't better in three days, come back.
+Patient: Okay, thank you.
+
+=== heart_failure_checkin ===
+Doctor: How is your breathing today?
+Patient: A bit worse. I get winded going up the stairs.
+Doctor: Have you gained any weight this week?
+Patient: Yes, about four pounds since Monday.
+Doctor: Any swelling in your legs?
+Patient: Yes, my ankles are puffy.
+Doctor: Are you taking your furosemide every morning?
+Patient: I missed it the last two days.
+Doctor: Okay. Please restart it today and I'm going to have the nurse call you this afternoon. Go to the ER if you can't catch your breath.
+Patient: Okay, I will.

@@ -1,0 +1,46 @@
+# API Server Dockerfile
+# syntax=docker/dockerfile:1
+
+FROM python:3.11-slim
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    postgresql-client \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# requirements-prod.txt must include (versions the adapter was trained/tested with):
+#   torch  transformers==4.44.2  peft==0.12.0  accelerate==0.33.0  sentencepiece  protobuf
+#   (+ bitsandbytes only if you set NOTE_QUANTIZE=4bit)
+#   psycopg2-binary  (database, see requirements-additions.txt)
+COPY requirements-prod.txt .
+RUN pip install --no-cache-dir -r requirements-prod.txt
+
+COPY api.py .
+COPY triage_scorer.py .
+COPY llm_inference.py .
+COPY note_generator_aftercare.py .
+COPY db.py .
+
+# Fine-tuned adapter: v4 is the final model (v3 had the stop-token bug, v5 did not beat v4).
+# Copy ONLY the two adapter files: the model folder also holds checkpoint-* subfolders with
+# optimizer state that would add gigabytes to the image.
+# Use another folder with:  docker build --build-arg ADAPTER_DIR=llama-2-aftercare-v5 ...
+ARG ADAPTER_DIR=llama-2-aftercare-v4
+COPY models/${ADAPTER_DIR}/adapter_config.json \
+     models/${ADAPTER_DIR}/adapter_model.safetensors \
+     /app/models/${ADAPTER_DIR}/
+
+# Note generation needs an NVIDIA GPU. Without one the API starts normally and /conversation/{id}/note
+# answers 503 (see note_generator_aftercare.py; NOTE_ALLOW_CPU=1 forces CPU, ~28 GB RAM).
+ENV NOTE_ADAPTER_PATH=/app/models/${ADAPTER_DIR} \
+    NOTE_BASE_MODEL=NousResearch/Llama-2-7b-chat-hf
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+EXPOSE 8000
+
+CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000", "--log-level", "info"]
