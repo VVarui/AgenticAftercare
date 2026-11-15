@@ -1,20 +1,21 @@
-# Agentic Aftercare
+# AI Aftercare
 
 A prototype nurse-assistant for post-visit check-ins. A patient checks in, rule-based **triage** scores the urgency
-and raises a nurse alert when needed, and a fine-tuned **Llama-2-7B-chat (LoRA)** model turns a finished
+and raises a **nurse alert** when needed, and a fine-tuned **Llama-2-7B-chat (LoRA)** model turns a finished
 doctor-patient conversation into a **draft clinical note** that a nurse reviews, edits and approves.
 
 > **Prototype for a course project. Not a medical device. Not clinically validated. Use synthetic data only.**
-> The note model can omit things. A nurse must check every draft.
+> The note model can omit things, repeat itself, invent details (including the patient's sex), and no clinician has
+> reviewed its output. A nurse must check every draft.
 
 ## What is in here
 
 | Part | What it does |
 |---|---|
-| `triage_scorer.py` | Deterministic, explainable urgency rules (symptoms and vitals).|
+| `triage_scorer.py` | Deterministic, explainable urgency rules (symptoms and vitals). Not an LLM. |
 | `api.py` + `db.py` | FastAPI service. Check-ins, alerts, conversations, draft notes, nurse review, feedback log and audit log in PostgreSQL (SQLite in memory when no `POSTGRES_URL` is set, for tests). |
 | `note_generator_aftercare.py` | Loads the LoRA adapter and writes a draft note. Output guards flag loops, cut-off text, runaway dialogue and very short notes (`quality_flags`). |
-| `demo.py` | Streamlit nurse dashboard: check-in, alerts, conversation, draft note review, system status. |
+| `demo.py` | Streamlit nurse dashboard: check-in, alerts, conversation, **draft note review**, system status. |
 | `training/train_v4.py` | The LoRA fine-tuning script (data is not included). |
 | `docs/` | Experiment log with honest results, app notes, RunPod GPU guide, sample conversations. |
 
@@ -38,6 +39,8 @@ docker compose up -d --build    # api, frontend, postgres, redis, ollama, promet
   (not generated from your conversation).
 * Symptom names must match the triage rules (`chest_pain`, `dyspnea`, ...); the dashboard offers them in a list.
 
+Real note generation on a GPU: [`docs/RUNPOD_API.md`](docs/RUNPOD_API.md).
+
 ## Tests
 
 ```bash
@@ -49,22 +52,32 @@ python -m pytest -q tests/test_api.py      # written but not yet run end to end;
 GitHub Actions runs these on every push (`.github/workflows/tests.yml`). The API tests are allowed to fail until
 they have passed once in CI.
 
-## The model
+## The model, honestly
 
 * Base: `NousResearch/Llama-2-7b-chat-hf` (a mirror of Meta's Llama 2; the Llama 2 Community License applies).
   Adapter: LoRA r=16, alpha=32, trained on MTS-Dialog and ACI-Bench (not redistributed here; check each licence).
-* On ACI-Bench (3 test sets of 18-19 notes, one run). It wins on section coverage (0.25-0.26 against 0.04 on two sets) and writes
-  more unsupported numbers than the base model. Fine-tuning taught structure and style.
+* On ACI-Bench (3 test sets of 18-19 notes, one run) v4 did **not** beat the untouched base model on ROUGE-1
+  (0.42-0.46 against 0.46-0.50). It wins on section coverage (0.25-0.26 against 0.04 on two sets) and writes
+  more unsupported numbers than the base model. Fine-tuning taught structure and style, not facts.
 * A bug in v3 (the stop token was masked during training) made notes run on; v4 fixed it
   (15 of 16 test notes with stop failures down to 1 of 16).
-* The adapter in this project is a retrain of v4 with the same settings.
+* A "v5" trained on notes with unsupported sentences removed was **worse** and was not adopted.
+* The adapter in this project is a **retrain** of v4 with the same settings; its numbers have not been re-measured.
 
+Full details, including what was not measured: [`docs/EXPERIMENTS.md`](docs/EXPERIMENTS.md).
 
 ## Known limits
 
 * Prototype security: no login on the API, CORS open to all origins, demo database passwords. Do not expose it to the
   internet as it is, and never load real patient data. Real patient data would bring HIPAA obligations
   (agreements with every host, access control, audit review) that this project does not meet.
-* Notes can be very short and repetitive.
+* Notes can be very short, repetitive or contain invented details; the pronoun problem (assuming the patient's sex)
+  is not addressed.
 * No clinician validation. Small evaluation sets.
 
+## Deploying
+
+GPU-pod testing: [`docs/RUNPOD_API.md`](docs/RUNPOD_API.md).
+
+AWS (one GPU EC2 instance, HTTPS plus a password gate, real note generation): [`docs/AWS_DEPLOY.md`](docs/AWS_DEPLOY.md),
+using `docker-compose.aws.yml` and `Caddyfile`. Written but not yet tested on a real AWS account.

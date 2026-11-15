@@ -1,0 +1,16 @@
+# Used by docker-compose.aws.yml. Caddy gets a free HTTPS certificate for SITE_ADDRESS automatically
+# (the domain must already point at this server, and ports 80 and 443 must be open).
+#
+# SITE_ADDRESS, BASIC_AUTH_USER and BASIC_AUTH_HASH come from .env (see docs/AWS_DEPLOY.md).
+
+{$SITE_ADDRESS} {
+	encode gzip
+
+	# Password gate: everything below needs the username and password.
+	basic_auth {
+		{$BASIC_AUTH_USER} {$BASIC_AUTH_HASH}
+	}
+
+	# Streamlit (websockets work through reverse_proxy without extra settings).
+	reverse_proxy frontend:8501
+}

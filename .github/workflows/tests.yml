@@ -43,5 +43,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - run: cp .env.example .env
       - run: docker compose -f docker-compose.yml config -q
       - run: docker compose -f docker-compose.prod.yml config -q
+      - name: AWS compose (dummy values for the three AWS-only settings)
+        run: docker compose -f docker-compose.aws.yml config -q
+        env:
+          SITE_ADDRESS: demo.example.com
+          BASIC_AUTH_USER: nurse
+          BASIC_AUTH_HASH: dummy
