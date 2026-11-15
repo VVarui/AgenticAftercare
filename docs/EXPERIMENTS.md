@@ -127,7 +127,7 @@ v4 did **not** beat the base model on ROUGE-1, tied on ROUGE-2 and ROUGE-L, and 
 It also wrote more unsupported numbers than the base model. Fine-tuning taught structure and style, not facts.
 Eval sets are small and BLEU was not run on this data. No clinician has reviewed any output.
 
-**v5 (tried, not adopted).** Changes: training notes with unsupported sentences removed (`ground.py`), 1 epoch, lr 1e-4,
+**v5 (tried).** Changes: training notes with unsupported sentences removed (`ground.py`), 1 epoch, lr 1e-4,
 LoRA r=8, ACI x2. Result on the same evaluation: ROUGE-1 0.27 / 0.33 / 0.32, section coverage 0.04 / 0.03 / 0.00,
 hallucination-test flags 7 (short prompt) and 12 (full note) against v4's 5 and 9, and stop failures
 (repetition / truncation) in 5 of 16 notes against 1 of 16 for v4. It missed every criterion set in advance except
