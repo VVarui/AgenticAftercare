@@ -1,7 +1,9 @@
-"""API tests through FastAPI's TestClient. No GPU, no Docker, no Ollama.
+"""API tests through FastAPI's TestClient. No GPU, no Docker, no Ollama (LLM and note model are faked).
 
 Needs:  pip install fastapi httpx pytest      Run:  pytest tests/test_api.py
-
+NOTE: these tests were written without being able to install FastAPI where they were authored, so they
+have not been run as written. The same handler logic was exercised separately against the real api.py
+and db.py. If one fails because of the test itself, fix the test, not the app.
 """
 import os
 import sys
@@ -76,11 +78,14 @@ def test_routine_check_in_has_no_alert(client):
     assert client.get("/alerts/pending").json()["count"] == 0
 
 
-@pytest.mark.xfail(reason="Known gap: the scorer matches exact names such as chest_pain; 'chest pain' scores ROUTINE.",
-                   strict=False)
-def test_unrecognised_symptom_name_should_not_score_routine(client):
+def test_free_text_symptom_name_is_normalised(client):
     r = client.post("/check-in", json=_check_in([{"name": "chest pain", "severity": 9}])).json()
-    assert r["urgency_level"] != "ROUTINE"
+    assert r["urgency_level"] == "EMERGENCY"
+
+
+def test_unknown_symptom_name_is_not_silently_routine(client):
+    r = client.post("/check-in", json=_check_in([{"name": "toe tingling", "severity": 9}])).json()
+    assert r["urgency_level"] == "MONITOR" and "toe tingling" in r["reasoning"]
 
 
 def test_acknowledge_alert(client):

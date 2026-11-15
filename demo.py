@@ -17,7 +17,8 @@ import requests
 
 API_URL = os.getenv("API_URL", "http://localhost:8000").rstrip("/")
 
-# Symptom names exactly as triage_scorer.py matches them (free text such as "chest pain" would score ROUTINE).
+# Symptom names as triage_scorer.py knows them. Case, spaces and hyphens are tolerated ("Chest pain" works), but a name
+# the rules do not know is not scored: it is reported back and the check-in is held at MONITOR for a nurse to read.
 SYMPTOM_CHOICES = [
     "chest_pain", "dyspnea", "difficulty_breathing", "loss_of_consciousness", "severe_bleeding",
     "severe_allergic_reaction", "altered_mental_status", "severe_headache", "abdominal_pain",
@@ -197,9 +198,11 @@ def tab_alerts(st, nurse: str):
             st.write("Symptoms:", ", ".join(alert["symptoms"]))
             st.write("Why:", alert["reasoning"])
             st.write("Recommended:", alert["recommended_action"])
-            if st.button("Acknowledge", key=f"ack_{alert['alert_id']}"):
+            if not nurse.strip():
+                st.info("Enter your name in the sidebar to acknowledge alerts.")
+            if st.button("Acknowledge", key=f"ack_{alert['alert_id']}", disabled=not nurse.strip()):
                 ok, res, status = api_call("POST", f"/alerts/{alert['alert_id']}/acknowledge",
-                                           params={"reviewed_by": nurse})
+                                           params={"reviewed_by": nurse.strip()})
                 if ok:
                     st.rerun()
                 else:

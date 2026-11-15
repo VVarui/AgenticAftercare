@@ -43,6 +43,7 @@ class TriageScorer:
         self.red_flags_urgent = {
             "fever": {"threshold": 103.5, "combos": ["cough", "dyspnea"]},  # pneumonia pattern
             "dyspnea": {"severity_threshold": 7},
+            "difficulty_breathing": {"severity_threshold": 7},  # same as dyspnea; EMERGENCY at 8+ is checked first
             "altered_mental_status": {"severity_threshold": 5},
             "severe_headache": {"severity_threshold": 8},
             "abdominal_pain": {"severity_threshold": 7, "type": "acute"},
@@ -57,6 +58,22 @@ class TriageScorer:
             "nausea_vomiting": {"severity_threshold": 5, "duration_hours": 4},
         }
     
+    # Names that only take part in symptom combinations (pneumonia / sepsis patterns).
+    COMBO_ONLY_SYMPTOMS = {"cough", "malaise", "confusion", "weakness"}
+
+    # Temperature bands taken from the rule table above (degrees Fahrenheit).
+    FEVER_URGENT_ABOVE = 103.5   # red_flags_urgent["fever"]["threshold"]
+    FEVER_MONITOR_FROM = 101     # yellow_flags["mild_fever"]["threshold"]
+
+    @staticmethod
+    def normalise_name(name: str) -> str:
+        """'Chest pain', 'chest-pain' and ' chest_pain ' all become 'chest_pain'."""
+        return "_".join(str(name).strip().lower().replace("-", " ").split())
+
+    def known_symptom_names(self) -> set:
+        return (set(self.red_flags_emergency) | set(self.red_flags_urgent) | set(self.yellow_flags)
+                | self.COMBO_ONLY_SYMPTOMS)
+
     def score_check_in(
         self,
         symptoms: List[Symptom],
@@ -78,6 +95,34 @@ class TriageScorer:
         }
         """
         
+        # Step 0: tidy names; remember any the rules do not know so they are never silently ignored
+        known = self.known_symptom_names()
+        unrecognized = []
+        tidy = []
+        for sym in symptoms:
+            name = self.normalise_name(sym.name)
+            if name not in known:
+                unrecognized.append(str(sym.name))
+            tidy.append(Symptom(name=name, severity=sym.severity,
+                                duration_hours=sym.duration_hours, onset=sym.onset))
+        symptoms = tidy
+        result = self._score(symptoms, vitals, patient_history)
+        result["unrecognized_symptoms"] = unrecognized
+        if unrecognized:
+            note = ("Symptom(s) not covered by the triage rules: " + ", ".join(unrecognized)
+                    + ". Nurse should review these by hand.")
+            result["reasoning"] = f"{result['reasoning']} {note}"
+            if result["score"] == 1:   # never report 'stable' when part of the report was not scored
+                result.update({
+                    "urgency_level": UrgencyLevel.MONITOR,
+                    "score": 2,
+                    "confidence": 0.60,
+                    "red_flags_detected": [f"unrecognized: {u}" for u in unrecognized],
+                    "recommended_action": "Nurse should review the unscored symptom(s) and follow up in 24-48 hours",
+                })
+        return result
+
+    def _score(self, symptoms, vitals, patient_history) -> Dict:
         # Step 1: Check for immediate emergencies
         emergency_flags = self._check_emergency_flags(symptoms, vitals, patient_history)
         if emergency_flags:
@@ -174,6 +219,9 @@ class TriageScorer:
                     else:
                         flags.append(f"{symptom.name} (severity {symptom.severity})")
         
+        if vitals.get("temp") and vitals["temp"] > self.FEVER_URGENT_ABOVE:
+            flags.append(f"High temperature ({vitals['temp']} F, above {self.FEVER_URGENT_ABOVE})")
+
         # Symptom combinations (e.g., fever + cough + dyspnea = pneumonia pattern)
         symptom_names = {s.name for s in symptoms}
         
@@ -199,12 +247,20 @@ class TriageScorer:
             if symptom.name in self.yellow_flags:
                 rule = self.yellow_flags[symptom.name]
                 
-                if symptom.severity >= rule.get("severity_threshold", 10):
+                long_enough = (
+                    "duration_hours" in rule
+                    and symptom.duration_hours is not None
+                    and symptom.duration_hours >= rule["duration_hours"]
+                )
+                if symptom.severity >= rule.get("severity_threshold", 10) or long_enough:
                     flags.append(f"{symptom.name} (monitoring)")
-        
+
         # Vital sign warnings
-        if vitals.get("temp") and 100 < vitals["temp"] < 101:
+        temp = vitals.get("temp")
+        if temp and 100 < temp < self.FEVER_MONITOR_FROM:
             flags.append("Low-grade fever - monitor")
+        elif temp and self.FEVER_MONITOR_FROM <= temp <= self.FEVER_URGENT_ABOVE:
+            flags.append(f"Fever by temperature ({temp} F) - monitor")
         
         return flags
     

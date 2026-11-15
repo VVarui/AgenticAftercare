@@ -1,4 +1,4 @@
-# AI Aftercare
+# Agentic Aftercare
 
 A prototype nurse-assistant for post-visit check-ins. A patient checks in, rule-based **triage** scores the urgency
 and raises a **nurse alert** when needed, and a fine-tuned **Llama-2-7B-chat (LoRA)** model turns a finished
@@ -17,7 +17,7 @@ doctor-patient conversation into a **draft clinical note** that a nurse reviews,
 | `note_generator_aftercare.py` | Loads the LoRA adapter and writes a draft note. Output guards flag loops, cut-off text, runaway dialogue and very short notes (`quality_flags`). |
 | `demo.py` | Streamlit nurse dashboard: check-in, alerts, conversation, **draft note review**, system status. |
 | `training/train_v4.py` | The LoRA fine-tuning script (data is not included). |
-| `docs/` | Experiment log with honest results, app notes, RunPod GPU guide, sample conversations. |
+| `docs/` | **[User guide](docs/USER_GUIDE.md)** (nurse walkthrough and admin reference), experiment log with honest results, app notes, RunPod and AWS guides, sample conversations. |
 
 ```
 Streamlit dashboard (8501) --> FastAPI (8000) --> PostgreSQL   (records, drafts, feedback, audit)
@@ -37,7 +37,7 @@ docker compose up -d --build    # api, frontend, postgres, redis, ollama, promet
 * Without an NVIDIA GPU, `POST /conversation/{id}/note` answers **503** with the reason. To try the whole review flow
   anyway, set `NOTE_DEMO_MODE=1` in `.env`: the API then returns **recorded** v4 notes, clearly labelled `DEMO`
   (not generated from your conversation).
-* Symptom names must match the triage rules (`chest_pain`, `dyspnea`, ...); the dashboard offers them in a list.
+* The triage rules know a fixed list of symptom names (`chest_pain`, `dyspnea`, ...); the dashboard offers them in a list. Spaces and capitals are tolerated; an unknown name is reported back and the check-in is held at MONITOR instead of scoring as stable.
 
 Real note generation on a GPU: [`docs/RUNPOD_API.md`](docs/RUNPOD_API.md).
 
@@ -45,7 +45,7 @@ Real note generation on a GPU: [`docs/RUNPOD_API.md`](docs/RUNPOD_API.md).
 
 ```bash
 pip install -r requirements-dev.txt
-python -m pytest -q tests/test_store.py tests/test_note_generator.py
+python -m pytest -q tests/test_store.py tests/test_note_generator.py tests/test_triage.py
 python tests/test_demo.py
 python -m pytest -q tests/test_api.py      # written but not yet run end to end; see CI note
 ```

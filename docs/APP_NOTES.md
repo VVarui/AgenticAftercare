@@ -26,7 +26,7 @@ Built from the files you attached on 2026-11-11. The model is **v4** (v5 did not
 6. Prove persistence: post a check-in, run `docker compose restart api`, then `GET /alerts/pending` still lists it.
 
 ## Important: how to demo it (corrections to what I told you earlier)
-* **Symptom names must match the triage rules exactly, with underscores:** `chest_pain`, `difficulty_breathing`, `dyspnea`, `fever`, `cough`, `mild_headache`... My earlier example used `"chest pain"` and `"shortness of breath"`, which the scorer does not recognise, so it scores **ROUTINE**. Use this instead (scores EMERGENCY):
+* **Use the triage rules' symptom names:** `chest_pain`, `difficulty_breathing`, `dyspnea`, `fever`, `cough`, `mild_headache`... Capitals, spaces and hyphens are tolerated since Nov 15 (`"chest pain"` now scores like `chest_pain`), but a name the rules do not know, such as `"shortness of breath"`, is not scored: it comes back in `unrecognized_symptoms` and the check-in is held at **MONITOR**. Use this example (scores EMERGENCY):
 ```json
 {"patient": {"patient_id": "P001", "age": 68, "comorbidities": ["HTN"], "current_meds": ["furosemide"], "allergies": []},
  "symptoms": [{"name": "chest_pain", "severity": 9, "duration_hours": 2}, {"name": "dyspnea", "severity": 8, "duration_hours": 2}],
@@ -73,7 +73,7 @@ See `RUNPOD_API.md` (API and dashboard on a GPU pod, load a conversation from `d
 ## Not done yet
 * **Frontend not run in a browser.** `demo.py` is tested with a fake Streamlit (every tab's code path and the API calls it makes), not with real Streamlit. Rebuild and look at it: `docker compose up -d --build frontend`, then http://localhost:8501.
 * **Login / access control.** CORS allows all origins and `GET /feedback/notes` returns conversation text with no authentication. Prototype only: do not put real patient data in it.
-* **Triage input check.** Unrecognised symptom names silently score ROUTINE. `tests/test_api.py` has an expected-failure test that documents this.
+* **Triage input check (fixed Nov 15).** Names are now normalised ("chest pain" works) and an unrecognised name is returned in `unrecognized_symptoms` and held at MONITOR, never silently ROUTINE. Still open: a vitals-only picture such as SpO2 88 scores ROUTINE because the rules have no threshold for it; a clinician should set those (`tests/test_triage.py` carries a strict xfail for it).
 * **Redis** is still unused; **Prometheus** has no `/metrics` endpoint and the postgres/redis exporters are not in the compose file, so those targets show down.
 * `llm_inference.py` is not used by the API (it calls Ollama directly). `DEPLOYMENT_GUIDE.md` you attached is the old v1 text; use `docs/DEPLOYMENT_GUIDE.md` from earlier and add the points above.
 * Database calls are synchronous (fine for a demo); timestamps are stored as ISO text.
