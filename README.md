@@ -52,7 +52,7 @@ python -m pytest -q tests/test_api.py
 GitHub Actions runs these on every push (`.github/workflows/tests.yml`): unit tests, API tests and a check that the
 compose files are valid. None of them need a GPU, so model quality is not tested by CI.
 
-## The model, honestly
+## The model
 
 * Base: `NousResearch/Llama-2-7b-chat-hf` (a mirror of Meta's Llama 2; the Llama 2 Community License applies).
   Adapter: LoRA r=16, alpha=32, trained on MTS-Dialog and ACI-Bench (not redistributed here; check each licence).
