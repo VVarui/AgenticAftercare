@@ -47,10 +47,10 @@ Real note generation on a GPU: [`docs/RUNPOD_API.md`](docs/RUNPOD_API.md).
 pip install -r requirements-dev.txt
 python -m pytest -q tests/test_store.py tests/test_note_generator.py tests/test_triage.py
 python tests/test_demo.py
-python -m pytest -q tests/test_api.py      # written but not yet run end to end; see CI note
+python -m pytest -q tests/test_api.py
 ```
-GitHub Actions runs these on every push (`.github/workflows/tests.yml`). The API tests are allowed to fail until
-they have passed once in CI.
+GitHub Actions runs these on every push (`.github/workflows/tests.yml`): unit tests, API tests and a check that the
+compose files are valid. None of them need a GPU, so model quality is not tested by CI.
 
 ## The model, honestly
 
