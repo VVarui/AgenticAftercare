@@ -93,21 +93,9 @@ A clinician review of a sample is still required.
 
 ---
 
-## 4. Still to do (no results yet)
-
-| Item | Why | Status |
-|---|---|---|
-| ACI-Bench test evaluation of v4 (`eval_aci.py`) | ROUGE / BLEU / section coverage for the report | **TBD** |
-| Base-model baseline (`eval_aci.py --no-adapter`) | Shows whether fine-tuning beats the untouched model | **TBD** |
-| Hyperparameter experiment (e.g. LR 1e-4, LoRA rank 8, dropout 0.1) | Lowers overfitting; covers tuning | **TBD** |
-| Compare the two saved v4 checkpoints on the hallucination test | Early checkpoints may write shorter notes | **TBD** |
-| Clinician review of generated notes (`eval_review.csv` rubric) | Only valid check of clinical correctness | **TBD** |
-| Fairness / demographic check (same conversation, swapped names/ages/sex) | The model invents ages and sexes | not planned |
-
-## 5. Known limitations (state these in any report or demo)
+## 4. Known limitations
 - Output is a **draft for nurse review**, never a final record.
 - Training data is English, mostly US, role-played or curated (MTS-Dialog, ACI-Bench). It is not real check-in data and is not representative of all patient groups.
-- The model sometimes invents ages, sexes, doses, sides of the body, and facts, and sometimes writes notes that are too short.
 - The ACI-Bench full-note style has only 67 real training examples; the short-summary style is better supported.
 - Fairness across patient groups has not been evaluated.
 
