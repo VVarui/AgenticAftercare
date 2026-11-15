@@ -4,9 +4,6 @@ A prototype nurse-assistant for post-visit check-ins. A patient checks in, rule-
 and raises a **nurse alert** when needed, and a fine-tuned **Llama-2-7B-chat (LoRA)** model turns a finished
 doctor-patient conversation into a **draft clinical note** that a nurse reviews, edits and approves.
 
-> **Prototype for a course project. Not a medical device. Not clinically validated. Use synthetic data only.**
-> The note model can omit things, repeat itself, invent details (including the patient's sex), and no clinician has
-> reviewed its output. A nurse must check every draft.
 
 ## What is in here
 
