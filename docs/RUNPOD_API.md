@@ -47,10 +47,3 @@ Open `https://<POD_ID>-8501.proxy.runpod.net`.
 `{"patient_id":"P1","turns":[{"role":"doctor","content":"How is your knee?"},{"role":"patient","content":"Better, pain is a 4 out of 10."}]}`
 -> copy `session_id` -> `POST /conversation/{session_id}/note` -> `GET /notes/pending`.
 
-## 5. What to expect (be honest about it)
-* The note is the real v4 model on your conversation. It may be very short, repeat itself, or invent a detail or the
-  patient's sex. Quality flags appear on the draft and the review screen. That is the point of the nurse review.
-* Rehearse with the sample conversations before showing anyone: the recorded v4 notes for them are in the notebook.
-
-## 6. Cleanup
-Download anything you want to keep (nothing is saved), then **terminate the pod**. Billing continues until you do.
