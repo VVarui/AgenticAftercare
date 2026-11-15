@@ -1,9 +1,8 @@
 """API tests through FastAPI's TestClient. No GPU, no Docker, no Ollama (LLM and note model are faked).
 
 Needs:  pip install fastapi httpx pytest      Run:  pytest tests/test_api.py
-NOTE: these tests were written without being able to install FastAPI where they were authored, so they
-have not been run as written. The same handler logic was exercised separately against the real api.py
-and db.py. If one fails because of the test itself, fix the test, not the app.
+History: first run in GitHub Actions (Nov 15): 11 passed, 1 failed because the test did not swap in the fake
+note generator. Fixed. If a test fails because of the test itself, fix the test, not the app.
 """
 import os
 import sys
@@ -143,12 +142,14 @@ def test_unknown_note_is_404(client):
     assert client.post("/notes/nope/review", json={"reviewed_by": "x", "final_text": "y"}).status_code == 404
 
 
-def test_import_conversation_then_note(client):
+def test_import_conversation_then_note(client, monkeypatch):
+    monkeypatch.setattr(api, "note_generator", FakeNotes(text="Knee improving."))   # the fixture disables notes
     r = client.post("/conversation/import", json={"patient_id": "P9", "turns": [
         {"role": "doctor", "content": "How is the knee?"}, {"role": "patient", "content": "Better."}, {"role": "doctor", "content": " "}]})
     assert r.status_code == 200
     body = r.json()
     assert body["message_count"] == 2
     assert [t["role"] for t in body["conversation_history"]] == ["assistant", "patient"]
-    assert client.post(f"/conversation/{body['session_id']}/note").status_code == 200
+    note = client.post(f"/conversation/{body['session_id']}/note")
+    assert note.status_code == 200 and note.json()["draft_text"] == "Knee improving."
     assert client.post("/conversation/import", json={"patient_id": "P9", "turns": []}).status_code == 422
