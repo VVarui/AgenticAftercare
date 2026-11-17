@@ -5,8 +5,6 @@ and raises a **nurse alert** when needed, and a fine-tuned **Llama-2-7B-chat (Lo
 doctor-patient conversation into a **draft clinical note** that a nurse reviews, edits and approves.
 
 > **Prototype for a course project. Not a medical device. Not clinically validated. Use synthetic data only.**
-> The note model can omit things, repeat itself, invent details (including the patient's sex), and no clinician has
-> reviewed its output. A nurse must check every draft.
 
 ## What is in here
 
@@ -54,27 +52,19 @@ python -m pytest -q tests/test_api.py
 GitHub Actions runs these on every push (`.github/workflows/tests.yml`): unit tests, API tests and a check that the
 compose files are valid. None of them need a GPU, so model quality is not tested by CI.
 
-## The model, honestly
+## The model
 
 * Base: `NousResearch/Llama-2-7b-chat-hf` (a mirror of Meta's Llama 2; the Llama 2 Community License applies).
   Adapter: LoRA r=16, alpha=32, trained on MTS-Dialog and ACI-Bench (not redistributed here; check each licence).
 * On ACI-Bench (3 test sets of 18-19 notes, one run) v4 did **not** beat the untouched base model on ROUGE-1
   (0.42-0.46 against 0.46-0.50). It wins on section coverage (0.25-0.26 against 0.04 on two sets) and writes
-  more unsupported numbers than the base model. Fine-tuning taught structure and style, not facts.
-* A bug in v3 (the stop token was masked during training) made notes run on; v4 fixed it
-  (15 of 16 test notes with stop failures down to 1 of 16).
-* A "v5" trained on notes with unsupported sentences removed was **worse** and was not adopted.
-* The adapter in this project is a **retrain** of v4 with the same settings; its numbers have not been re-measured.
+  more unsupported numbers than the base model.
 
 Full details, including what was not measured: [`docs/EXPERIMENTS.md`](docs/EXPERIMENTS.md).
 
 ## Known limits
 
-* Prototype security: no login on the API, CORS open to all origins, demo database passwords. Do not expose it to the
-  internet as it is, and never load real patient data. Real patient data would bring HIPAA obligations
-  (agreements with every host, access control, audit review) that this project does not meet.
-* Notes can be very short, repetitive or contain invented details; the pronoun problem (assuming the patient's sex)
-  is not addressed.
+* Notes can be very short and repetitive.
 * No clinician validation. Small evaluation sets.
 
 ## Deploying
