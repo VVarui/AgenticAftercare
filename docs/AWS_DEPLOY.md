@@ -4,7 +4,8 @@ One EC2 GPU machine runs everything with `docker-compose.aws.yml`: Streamlit das
 Ollama and the Llama-2-7B + v4 adapter that writes the draft notes. Only HTTPS (port 443) is open to the internet,
 behind a username and password.
 
-> **Status: written but not yet tested on a real AWS account.** Console menu names, AMI names and prices change.
+> **Status: written but not yet tested on a real AWS account.** (Nov 16: AWS declined the GPU quota request and the appeal, so the live demo
+> uses RunPod instead, see `RUNPOD_API.md`. This guide stays as the prepared route for when a quota is granted.) Console menu names, AMI names and prices change.
 > Where a step says "check", look at the current AWS page rather than trusting this file.
 > **Synthetic data only.** A password gate is not HIPAA compliance. Real patient data would need a signed AWS BAA,
 > encryption, access control and audit review that this project does not have.
@@ -107,7 +108,7 @@ docker exec ai-aftercare-api python -c "from huggingface_hub import snapshot_dow
 ```
 
 ## 9. Check it works
-1. Browser: `https://3-91-12-45.sslip.io` (your address). Log in with `nurse` and your password. The first visit can take a minute while the certificate is issued.
+1. Browser: `https://3-91-12-45.sslip.io` (your address) is the nurse dashboard. Log in with `nurse` and your password. The first visit can take a minute while the certificate is issued. The **patient page** is at `https://patient.3-91-12-45.sslip.io` (same login; with your own domain, add a DNS record for `patient.<domain>` first).
 2. On the server: `docker exec ai-aftercare-api curl -s localhost:8000/health`. `note_generation` should say the model is available, not `DEMO` and not a GPU error.
 3. In the dashboard: create a patient, run a check-in, import a conversation (use `docs/sample_conversations.txt`), generate a draft note. The first note loads the model onto the GPU (about a minute); later ones are faster.
 4. `nvidia-smi` on the server during a note shows memory use; the two models together should fit in the 24 GB.

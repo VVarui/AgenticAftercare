@@ -58,6 +58,32 @@ services:
       - ai-aftercare
 
   # ============================================================================
+  # PATIENT PAGE (Streamlit, separate app: no nurse tools, no triage details)
+  # ============================================================================
+  patient:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: ai-aftercare-patient
+    command: ["streamlit", "run", "patient.py", "--server.port=8502", "--server.address=0.0.0.0",
+              "--server.headless=true", "--server.enableCORS=false"]
+    ports:
+      - "0.0.0.0:8502:8502"
+    environment:
+      - API_URL=http://api:8000
+      - CLINIC_PHONE=${CLINIC_PHONE:-}
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - api
+    networks:
+      - ai-aftercare
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8502/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ============================================================================
   # LLM ENGINE (Ollama)
   # ============================================================================
   ollama:
@@ -72,7 +98,7 @@ services:
     networks:
       - ai-aftercare
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      test: ["CMD", "ollama", "list"]
       interval: 10s
       timeout: 5s
       retries: 5

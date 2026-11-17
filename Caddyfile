@@ -14,3 +14,17 @@
 	# Streamlit (websockets work through reverse_proxy without extra settings).
 	reverse_proxy frontend:8501
 }
+
+# Patient page on a sub-domain. With the free sslip.io option this works with no extra setup:
+# patient.3-91-12-45.sslip.io points at the same server. With your own domain, add a DNS record for
+# patient.<your domain> that points at the server.
+# The same shared password protects it for the demo; a real patient page would use per-patient sign-in instead.
+patient.{$SITE_ADDRESS} {
+	encode gzip
+
+	basic_auth {
+		{$BASIC_AUTH_USER} {$BASIC_AUTH_HASH}
+	}
+
+	reverse_proxy patient:8502
+}

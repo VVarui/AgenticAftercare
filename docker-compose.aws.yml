@@ -35,8 +35,34 @@ services:
       - caddy_config:/config
     depends_on:
       - frontend
+      - patient
     networks:
       - ai-aftercare
+
+  # ============================================================================
+  # PATIENT PAGE (Streamlit) - reached only through Caddy at patient.<SITE_ADDRESS>
+  # ============================================================================
+  patient:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: ai-aftercare-patient
+    restart: unless-stopped
+    command: ["streamlit", "run", "patient.py", "--server.port=8502", "--server.address=0.0.0.0",
+              "--server.headless=true", "--server.enableCORS=false"]
+    environment:
+      - API_URL=http://api:8000
+      - CLINIC_PHONE=${CLINIC_PHONE:-}
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - api
+    networks:
+      - ai-aftercare
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8502/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   # ============================================================================
   # FRONTEND (Streamlit nurse dashboard) - reached only through Caddy

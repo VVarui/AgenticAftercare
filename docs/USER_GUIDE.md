@@ -23,7 +23,18 @@ Nothing the system produces goes into a patient record on its own. A draft note 
    * **DEMO**: notes are recorded examples, not generated from your conversation
    * "disabled" or "no GPU": the note button will explain that it is unavailable
 
-The five tabs are along the top: **Check-in, Nurse alerts, Conversation & note, Draft note review, System.**
+**The patient page.** Patients use a separate page (locally `http://localhost:8502`; on AWS the same address with `patient.` in front). It asks in plain language how they feel, shows one clear message, and offers a chat with an automated assistant:
+
+| Patient's check-in scores | What the patient is told |
+|---|---|
+| EMERGENCY | Call 911 or go to the emergency room now; do not wait for a call back |
+| URGENT | A nurse will contact you today; call 911 if you feel worse |
+| MONITOR | Your care team will follow up within a day or two |
+| ROUTINE | Check-in received; send another if anything changes |
+
+Patients never see scores, red flags or the rules' reasoning; those appear on the nurse dashboard. A patient who picks **"Something else"** is held at MONITOR and the nurse is told to read their message, because the rules cannot score free text. A check-in that scores URGENT or EMERGENCY appears under **Nurse alerts** within seconds, and the patient's chat messages can be read in the conversation list. The patient page has **no sign-in**, so anyone can type any Patient ID: it is a demo of the flow, not a deployable patient app.
+
+The five tabs are along the top of the nurse dashboard: **Check-in, Nurse alerts, Conversation & note, Draft note review, System.**
 
 ## 3. Check-in tab: score a patient's report
 1. Fill in **Patient ID** (for example `P001`), age, conditions and medications (comma separated).
@@ -103,6 +114,7 @@ The **System** tab shows the database type, the note-model status, counts (check
 
 | Task | Command (run in the project folder) |
 |---|---|
+| Patient page | `http://localhost:8502` (set `CLINIC_PHONE` in `.env` to show a phone number in its safety messages) |
 | Start locally | `cp .env.example .env`, set passwords, then `docker compose -p ai-aftercare up -d --build` |
 | Check health | open `http://localhost:8000/health` (API docs at `/docs`) |
 | Stop | `docker compose -p ai-aftercare down` (never add `-v`: it deletes the stored chat models) |
