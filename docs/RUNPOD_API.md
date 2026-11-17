@@ -1,11 +1,5 @@
 # Live note generation on a RunPod GPU (API + nurse dashboard + patient page on the pod)
 
-Your PC has no NVIDIA GPU, so the fine-tuned v4 model runs on a pod. The pod runs the API, the nurse dashboard and the patient page only:
-no Docker, no Postgres (the API falls back to an in-memory database), no Ollama (chat replies are the canned
-fallback, so **load a full conversation instead of chatting**: the dashboard's "Load a doctor-patient conversation"; the patient page's
-chat box will show the canned reply too).
-Everything on the pod is lost when it is stopped. That is fine for a test.
-
 ## 1. Pod
 * Template: a RunPod PyTorch template. GPU: 24 GB or more (the 7B model needs about 14 GB in bf16).
 * **Expose HTTP ports 8000, 8501 and 8502** when you deploy (Edit template / Edit pod -> "Expose HTTP Ports"). Your URLs are
