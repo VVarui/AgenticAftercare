@@ -77,4 +77,4 @@ Full details, including what was not measured: [`docs/EXPERIMENTS.md`](docs/EXPE
 GPU-pod testing: [`docs/RUNPOD_API.md`](docs/RUNPOD_API.md).
 
 AWS (one GPU EC2 instance, HTTPS plus a password gate, real note generation): [`docs/AWS_DEPLOY.md`](docs/AWS_DEPLOY.md),
-using `docker-compose.aws.yml` and `Caddyfile`. Written but not yet tested on a real AWS account.
+using `docker-compose.aws.yml` and `Caddyfile`.
