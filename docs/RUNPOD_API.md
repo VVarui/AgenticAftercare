@@ -6,7 +6,7 @@
   `https://<POD_ID>-8000.proxy.runpod.net` (API), `https://<POD_ID>-8501.proxy.runpod.net` (nurse dashboard) and
   `https://<POD_ID>-8502.proxy.runpod.net` (patient page).
   If you forget, add them and let the pod restart; files on the pod volume stay.
-* Zip your whole project folder on your PC (the one that holds `api.py`, `patient.py` and `models\llama-2-aftercare-v4`; name the zip
+* Zip the whole project folder(the one that holds `api.py`, `patient.py` and `models\llama-2-aftercare-v4`; name the zip
   `ai-aftercare.zip`), upload it to `/workspace` through the pod's Jupyter file browser, then open a terminal.
 
 ## 2. Install and start the API (in tmux)
@@ -55,11 +55,3 @@ under **Nurse alerts** on the dashboard. Everything is in memory: restarting the
 `https://<POD_ID>-8000.proxy.runpod.net/docs` -> `POST /conversation/import` with
 `{"patient_id":"P1","turns":[{"role":"doctor","content":"How is your knee?"},{"role":"patient","content":"Better, pain is a 4 out of 10."}]}`
 -> copy `session_id` -> `POST /conversation/{session_id}/note` -> `GET /notes/pending`.
-
-## 5. What to expect (be honest about it)
-* The note is the real v4 model on your conversation. It may be very short, repeat itself, or invent a detail or the
-  patient's sex. Quality flags appear on the draft and the review screen. That is the point of the nurse review.
-* Rehearse with the sample conversations before showing anyone: the recorded v4 notes for them are in the notebook.
-
-## 6. Cleanup
-Download anything you want to keep (nothing is saved), then **terminate the pod**. Billing continues until you do.
